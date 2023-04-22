@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Grupo de cubos</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <script type="module">
+    import * as THREE from 'https://sebastiann16.github.io/CompG/three.module.js';
+    import { OrbitControls } from 'https://sebastiann16.github.io/CompG/OrbitControls.js';
+    var WIDTH = window.innerWidth;
+    var HEIGHT = window.innerHeight;
+
+/*Crear la escena 
+*/
+
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(WIDTH, HEIGHT);
+    renderer.setClearColor(0xDDDDDD, 1);
+    document.body.appendChild(renderer.domElement);
+
+    var scene = new THREE.Scene();
+/*posicionar la cámara
+*/
+    var camera = new THREE.PerspectiveCamera(70, WIDTH / HEIGHT);
+    camera.position.z = 20;
+    camera.position.y = 5;
+    scene.add(camera);
+    const light = new THREE.AmbientLight(0x404040, 5);
+    scene.add(light);
+   
+    
+//Arreglo de colores para cada cubo (hexadecimal)
+    const color = [0x00ffff, 0x84B342];
+
+
+/*Funcion Cubo: Crea la geometria y el material del cubo 
+ ENTRADAS: base: base del cubo (entero)
+           altura: alto del cubo (entero)
+           ancho: ancho del cubo (entero)
+           col: color del material(arreglo de colores)
+
+SALIDAS: retorna el cubo con geometria y material
+*/
+
+    function cubo(base, altura, ancho, col) {
+      const geometry = new THREE.BoxGeometry(base, altura, ancho);
+      const material = new THREE.MeshMatcapMaterial({ color: col });
+      return new THREE.Mesh(geometry, material);
+    }
+
+    //Variables globales
+    var x = new THREE.Vector3(1,0,0)
+    var y = new THREE.Vector3(0,1,0)
+    var z = new THREE.Vector3(0,0,1)
+    var beta = degToRad(30);
+    var alfa = degToRad(25);
+    var abertura = Math.PI - alfa;
+    var gama = degToRad(-20);
+    var l = 8;
+    var cubos = []; //Arreglo de cubos (vacio)
+    var n = color.length;
+
+    //Agregar los cubos a la escena 
+    for(let i=0; i<n; i++){
+        cubos[i] = cubo(l/8, l, l/8, color[i]); //cubos dentro del arreglo cubos[i]
+        scene.add(cubos[i])
+    }
+
+    /*funcion traslacion: Traslada objetos a la posicion indicada
+                          ENTRADAS: fig: objeto a trasladar (tipo Mesh)
+                                    vx: valor de traslacion en x
+                                    vy: valor de traslacion en y
+                                    vz: valor de traslacion en z
+                          SALIDAS: 
+      */                    
+    function traslacion (fig,vx,vy,vz){
+        fig.position.x = vx;
+        fig.position.y = vy;
+        fig.position.z = vz;
+
+    }
+
+    traslacion(cubos[0],0 , l/2, 0);
+    traslacion(cubos[1], l/8+l/12, 3*l/2-l/32, 0);
+
+ 
+/*funcion DegToRad: Convierte grados en radianes para poder ser leidos por la rotacion
+                   ENTRADAS: degrees: Valor de los grados (numerico)
+                   SALIDAS: retorna la conversion en radianes
+  */                 
+function degToRad(degrees) {
+  return degrees * Math.PI / 180;
+}
+
+
+/**
+ * rotacion: permite rotar un objeto Three.js alrededor de un eje específico por un ángulo específico. La rotación se realiza utilizando quaternions, que son una forma eficiente de representar rotaciones en 3D
+ * ENTRADAS: objeto = objeto a rotar (mesh)
+ *          eje = eje sobre el que rota la figura (vector)
+ *          angulo =  angulo de rotacion
+ * SALIDAS: objeto rotado
+ */
+
+
+function Rotacion( objeto, eje, angulo) {
+    
+    const quaternion = new THREE.Quaternion(); //se crea un objeto Quaternion, que es una representación matemática de una rotación en 3D
+    quaternion.setFromAxisAngle(eje, angulo); // El quaternion se inicializa con la rotación deseada, especificada por el vector eje y el ángulo angulo.
+  
+    objeto.quaternion.multiply(quaternion); //se aplica la rotación al objeto objeto mediante la multiplicación de su quaternion actual por el quaternion creado en la línea anterior. Esto actualiza el quaternion del objeto con la nueva rotación, permitiendo que se visualice la rotación en la escena
+}
+
+//rota de forma independiente la figura guardada en cubos[1] segun la abertura
+cubos[1].rotation.z = abertura
+
+//crea un grupo nuevo
+const grupo = new THREE.Group();
+
+//añade las figuras al grupo
+grupo.add(cubos[0]);
+grupo.add(cubos[1]);
+scene.add(grupo)
+
+//rota el grupo en funcion del angulo beta y del angulo gama
+Rotacion(grupo, z, -beta);
+grupo.rotation.y += gama;
+
+
+//controlador de camara orbitcontrols
+    const controls = new OrbitControls(camera, renderer.domElement);
+    const axesHelper = new THREE.AxesHelper( 1000 ); //flechas del plano
+    scene.add( axesHelper );
+
+    const size = 1000;
+const divisions = 1000;
+//añadir la malla
+const gridHelper = new THREE.GridHelper( size, divisions );
+scene.add( gridHelper );
+
+
+    function animate() {
+
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera)
+    }
+    animate();
+  </script>
+</body>
+
+</html>
